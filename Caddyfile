@@ -1,8 +1,2 @@
-spee-ai.com {
-    reverse_proxy /api/* backend:8080
-    reverse_proxy * frontend:80
-}
-
-www.spee-ai.com {
-    redir https://spee-ai.com{uri} permanent
-}
+# Caddyfile không dùng nữa — host Nginx đảm nhận SSL và reverse proxy.
+# Xem hướng dẫn thêm Nginx server block vào config trên VPS.

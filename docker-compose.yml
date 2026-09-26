@@ -11,7 +11,7 @@ services:
       Jwt__Key: "${JWT_KEY}"
       Auth__DefaultUsername: "${ADMIN_USERNAME:-admin}"
       Auth__DefaultPassword: "${ADMIN_PASSWORD}"
-      Frontend__Origin: "https://spee-ai.com"
+      Frontend__Origin: "https://todo.spee-ai.com"
     depends_on:
       mysql:
         condition: service_healthy
