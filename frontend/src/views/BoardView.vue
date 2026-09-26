@@ -114,7 +114,7 @@ onMounted(loadTasks)
       >
         <template #header-extra>
           <form class="board-page__add-form" @submit.prevent="handleAddTask">
-            <Textarea v-model="newTitle" placeholder="Thêm công việc mới..." class="board-page__add-input" rows="3" autoResize />
+            <Textarea v-model="newTitle" placeholder="Thêm công việc mới..." class="board-page__add-input" rows="3" autoResize @keydown="(e) => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && handleAddTask()" />
             <Button label="Thêm" size="small" type="submit" />
           </form>
         </template>
