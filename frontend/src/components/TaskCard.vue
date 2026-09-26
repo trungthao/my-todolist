@@ -1,29 +1,66 @@
 <script setup>
-import { computed, toRef } from 'vue'
+import { computed, ref, toRef } from 'vue'
 import { useElapsedTime } from '../composables/useElapsedTime'
 
 const props = defineProps({
   task: { type: Object, required: true },
-  variant: { type: String, default: 'compact' }, // 'compact' | 'featured'
-  showTime: { type: Boolean, default: false }
+  variant: { type: String, default: 'compact' },
+  userId: { type: Number, required: true },
+  isAdmin: { type: Boolean, default: false },
+  members: { type: Array, default: () => [] }
 })
 
-defineEmits(['delete'])
+const emit = defineEmits(['delete', 'update-assignee'])
 
 const taskRef = toRef(props, 'task')
 const { formatted } = useElapsedTime(taskRef)
 
 const isFeatured = computed(() => props.variant === 'featured')
+const isMyTask = computed(() =>
+  props.task.assignedToUserId === props.userId || props.task.createdByUserId === props.userId
+)
+const showTime = computed(() => props.isAdmin || isMyTask.value)
+const canDelete = computed(() => props.isAdmin || props.task.createdByUserId === props.userId)
+const canDrag = computed(() => props.isAdmin || isMyTask.value)
+const canChangeAssignee = computed(() => props.isAdmin || props.task.createdByUserId === props.userId)
+
+const editingAssignee = ref(false)
+
+function onAssigneeChange(e) {
+  const newId = Number(e.target.value)
+  emit('update-assignee', { taskId: props.task.id, assignedToUserId: newId })
+  editingAssignee.value = false
+}
 </script>
 
 <template>
-  <div class="task-card" :class="variant">
+  <div class="task-card" :class="[variant, { 'no-drag': !canDrag }]">
     <div class="task-card__header">
       <h3 class="task-card__title">{{ task.title }}</h3>
-      <button class="task-card__delete" title="Xóa" @click="$emit('delete', task.id)">×</button>
+      <button v-if="canDelete" class="task-card__delete" title="Xóa" @click="$emit('delete', task.id)">×</button>
     </div>
+
     <p v-if="task.description" class="task-card__description">{{ task.description }}</p>
-    <div v-if="task.assignedToUsername" class="task-card__assignee">{{ task.assignedToUsername }}</div>
+
+    <div class="task-card__assignee-row">
+      <select
+        v-if="editingAssignee"
+        class="task-card__assignee-select"
+        :value="task.assignedToUserId"
+        @change="onAssigneeChange"
+        @blur="editingAssignee = false"
+      >
+        <option v-for="m in members" :key="m.userId" :value="m.userId">{{ m.username }}</option>
+      </select>
+      <span
+        v-else-if="task.assignedToUsername || canChangeAssignee"
+        class="task-card__assignee"
+        :class="{ 'task-card__assignee--editable': canChangeAssignee }"
+        :title="canChangeAssignee ? 'Nhấn để thay đổi người thực hiện' : undefined"
+        @click="canChangeAssignee && (editingAssignee = true)"
+      >{{ task.assignedToUsername || '— chưa giao' }}</span>
+    </div>
+
     <div v-if="showTime" class="task-card__footer">
       <span class="task-card__timer" :class="{ live: isFeatured }">
         <span v-if="isFeatured" class="task-card__dot"></span>
@@ -43,9 +80,9 @@ const isFeatured = computed(() => props.variant === 'featured')
   cursor: grab;
 }
 
-.task-card:active {
-  cursor: grabbing;
-}
+.task-card:active { cursor: grabbing; }
+
+.task-card.no-drag { cursor: default; }
 
 .task-card__header {
   display: flex;
@@ -78,6 +115,7 @@ const isFeatured = computed(() => props.variant === 'featured')
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .task-card__delete:hover {
@@ -85,14 +123,32 @@ const isFeatured = computed(() => props.variant === 'featured')
   background: #fef2f2;
 }
 
-.task-card__assignee {
+.task-card__assignee-row {
   margin-top: 6px;
+}
+
+.task-card__assignee {
   font-size: 0.78rem;
   color: #9ca3af;
 }
 
-.task-card__assignee::before {
-  content: '\1F464\00A0';
+.task-card__assignee::before { content: '\1F464\00A0'; }
+
+.task-card__assignee--editable {
+  cursor: pointer;
+  border-bottom: 1px dashed #d1d5db;
+}
+
+.task-card__assignee--editable:hover { color: #6b7280; }
+
+.task-card__assignee-select {
+  font-size: 0.78rem;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 4px;
+  background: #fff;
+  width: 100%;
 }
 
 .task-card__footer {
@@ -110,7 +166,7 @@ const isFeatured = computed(() => props.variant === 'featured')
   gap: 6px;
 }
 
-/* Featured (In Progress) cards: biggest, boldest, most eye-catching */
+/* Featured (In Progress) cards */
 .task-card.featured {
   padding: 22px 24px;
   border: 2px solid #f97316;
@@ -118,14 +174,8 @@ const isFeatured = computed(() => props.variant === 'featured')
   background: linear-gradient(180deg, #fff7ed 0%, #ffffff 60%);
 }
 
-.task-card.featured .task-card__title {
-  font-size: 1.4rem;
-}
-
-.task-card.featured .task-card__description {
-  font-size: 1rem;
-}
-
+.task-card.featured .task-card__title { font-size: 1.4rem; }
+.task-card.featured .task-card__description { font-size: 1rem; }
 .task-card.featured .task-card__timer {
   font-size: 1.15rem;
   font-weight: 700;

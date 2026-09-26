@@ -5,7 +5,7 @@ import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
-import { createTask, deleteTask, fetchTasks, updateTaskStatus } from '../api/tasks'
+import { createTask, deleteTask, fetchTasks, updateTaskAssignee, updateTaskStatus } from '../api/tasks'
 import { addMember, fetchMembers, removeMember } from '../api/teams'
 import BoardColumn from '../components/BoardColumn.vue'
 
@@ -86,6 +86,18 @@ async function handleTaskMoved({ id, status }) {
   } catch {
     errorMessage.value = 'Không cập nhật được trạng thái công việc.'
     await loadTasks()
+  }
+}
+
+async function handleUpdateAssignee({ taskId, assignedToUserId }) {
+  const allTasks = [...todoTasks.value, ...inProgressTasks.value, ...doneTasks.value]
+  const task = allTasks.find((t) => t.id === taskId)
+  if (!task) return
+  try {
+    const updated = await updateTaskAssignee(taskId, assignedToUserId)
+    Object.assign(task, updated)
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'Không cập nhật được người thực hiện.'
   }
 }
 
@@ -194,9 +206,12 @@ onMounted(async () => {
         status="Todo"
         :tasks="todoTasks"
         :is-admin="isAdmin"
+        :user-id="userId"
+        :members="members"
         variant="compact"
         @task-moved="handleTaskMoved"
         @delete-task="handleDeleteTask"
+        @update-assignee="handleUpdateAssignee"
       >
         <template #header-extra>
           <form class="board-page__add-form" @submit.prevent="handleAddTask">
@@ -227,9 +242,12 @@ onMounted(async () => {
         status="InProgress"
         :tasks="inProgressTasks"
         :is-admin="isAdmin"
+        :user-id="userId"
+        :members="members"
         variant="featured"
         @task-moved="handleTaskMoved"
         @delete-task="handleDeleteTask"
+        @update-assignee="handleUpdateAssignee"
       />
 
       <BoardColumn
@@ -237,9 +255,12 @@ onMounted(async () => {
         status="Done"
         :tasks="doneTasks"
         :is-admin="isAdmin"
+        :user-id="userId"
+        :members="members"
         variant="compact"
         @task-moved="handleTaskMoved"
         @delete-task="handleDeleteTask"
+        @update-assignee="handleUpdateAssignee"
       />
     </div>
   </div>

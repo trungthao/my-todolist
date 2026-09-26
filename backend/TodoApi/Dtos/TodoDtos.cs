@@ -5,6 +5,7 @@ namespace TodoApi.Dtos;
 public record CreateTodoRequest(string Title, string? Description, int TeamId, int? AssignedToUserId);
 public record UpdateTodoRequest(string Title, string? Description, int? AssignedToUserId);
 public record UpdateStatusRequest(TodoStatus Status);
+public record UpdateAssigneeRequest(int? AssignedToUserId);
 
 public record TodoItemResponse(
     int Id,

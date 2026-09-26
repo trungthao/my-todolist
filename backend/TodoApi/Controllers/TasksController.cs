@@ -109,10 +109,44 @@ public class TasksController : ControllerBase
         if (item is null) return NotFound();
 
         var userId = GetUserId();
-        if (!await IsMember(item.TeamId, userId)) return Forbid();
+        var membership = await GetMembership(item.TeamId, userId);
+        if (membership is null) return Forbid();
+        if (membership.Role != TeamRole.Admin && item.AssignedToUserId != userId && item.CreatedByUserId != userId)
+            return Forbid();
 
         ApplyStatusTransition(item, request.Status);
         await _db.SaveChangesAsync();
+
+        return Ok(TodoItemResponse.FromEntity(item));
+    }
+
+    [HttpPut("{id:int}/assignee")]
+    public async Task<ActionResult<TodoItemResponse>> UpdateAssignee(int id, UpdateAssigneeRequest request)
+    {
+        var item = await _db.TodoItems
+            .Include(t => t.CreatedBy)
+            .Include(t => t.AssignedTo)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        if (item is null) return NotFound();
+
+        var userId = GetUserId();
+        var membership = await GetMembership(item.TeamId, userId);
+        if (membership is null) return Forbid();
+        if (membership.Role != TeamRole.Admin && item.CreatedByUserId != userId) return Forbid();
+
+        if (request.AssignedToUserId.HasValue)
+        {
+            if (!await IsMember(item.TeamId!.Value, request.AssignedToUserId.Value))
+                return BadRequest(new { message = "Người được giao không phải thành viên của team." });
+            item.AssignedToUserId = request.AssignedToUserId.Value;
+        }
+        else
+        {
+            item.AssignedToUserId = null;
+        }
+
+        await _db.SaveChangesAsync();
+        await _db.Entry(item).Reference(t => t.AssignedTo).LoadAsync();
 
         return Ok(TodoItemResponse.FromEntity(item));
     }

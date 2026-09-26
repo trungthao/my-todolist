@@ -7,4 +7,6 @@ export const updateTask = (id, title, description, assignedToUserId) =>
   http.put(`/tasks/${id}`, { title, description, assignedToUserId }).then(r => r.data)
 export const updateTaskStatus = (id, status) =>
   http.put(`/tasks/${id}/status`, { status }).then(r => r.data)
+export const updateTaskAssignee = (id, assignedToUserId) =>
+  http.put(`/tasks/${id}/assignee`, { assignedToUserId }).then(r => r.data)
 export const deleteTask = (id) => http.delete(`/tasks/${id}`)

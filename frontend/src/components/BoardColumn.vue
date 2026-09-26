@@ -7,15 +7,23 @@ const props = defineProps({
   status: { type: String, required: true },
   tasks: { type: Array, required: true },
   variant: { type: String, default: 'compact' },
-  isAdmin: { type: Boolean, default: false }
+  isAdmin: { type: Boolean, default: false },
+  userId: { type: Number, required: true },
+  members: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['task-moved', 'delete-task'])
+const emit = defineEmits(['task-moved', 'delete-task', 'update-assignee'])
 
 function onChange(event) {
   if (event.added) {
     emit('task-moved', { id: event.added.element.id, status: props.status })
   }
+}
+
+function checkMove(evt) {
+  const task = evt.draggedContext.element
+  if (props.isAdmin) return true
+  return task.assignedToUserId === props.userId || task.createdByUserId === props.userId
 }
 </script>
 
@@ -33,10 +41,19 @@ function onChange(event) {
       :list="tasks"
       :group="{ name: 'tasks', pull: true, put: true }"
       item-key="id"
+      :move="checkMove"
       @change="onChange"
     >
       <template #item="{ element }">
-        <TaskCard :task="element" :variant="variant" :show-time="isAdmin" @delete="$emit('delete-task', $event)" />
+        <TaskCard
+          :task="element"
+          :variant="variant"
+          :user-id="userId"
+          :is-admin="isAdmin"
+          :members="members"
+          @delete="$emit('delete-task', $event)"
+          @update-assignee="$emit('update-assignee', $event)"
+        />
       </template>
     </draggable>
 
@@ -55,9 +72,7 @@ function onChange(event) {
   overflow: hidden;
 }
 
-.board-column--inprogress {
-  background: #fffbeb;
-}
+.board-column--inprogress { background: #fffbeb; }
 
 .board-column__header {
   display: flex;
