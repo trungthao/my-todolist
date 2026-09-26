@@ -1,0 +1,8 @@
+spee-ai.com {
+    reverse_proxy /api/* backend:8080
+    reverse_proxy * frontend:80
+}
+
+www.spee-ai.com {
+    redir https://spee-ai.com{uri} permanent
+}

@@ -50,7 +50,8 @@ function onChange(event) {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .board-column--inprogress {
@@ -88,6 +89,8 @@ function onChange(event) {
   gap: 10px;
   flex: 1;
   min-height: 60px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .board-column__empty {

@@ -7,6 +7,9 @@ backend/TodoApi/appsettings.Development.json
 frontend/node_modules/
 frontend/dist/
 
+# Secrets
+.env
+
 # Editor / OS
 .vs/
 .vscode/

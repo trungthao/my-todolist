@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
 import { createTask, deleteTask, fetchTasks, updateTaskStatus } from '../api/tasks'
 import BoardColumn from '../components/BoardColumn.vue'
 
@@ -114,7 +114,7 @@ onMounted(loadTasks)
       >
         <template #header-extra>
           <form class="board-page__add-form" @submit.prevent="handleAddTask">
-            <InputText v-model="newTitle" placeholder="Thêm công việc mới..." class="board-page__add-input" />
+            <Textarea v-model="newTitle" placeholder="Thêm công việc mới..." class="board-page__add-input" rows="3" autoResize />
             <Button label="Thêm" size="small" type="submit" />
           </form>
         </template>
@@ -145,7 +145,11 @@ onMounted(loadTasks)
 .board-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 32px 48px;
+  padding: 24px 32px 24px;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .board-page__header {
@@ -187,16 +191,20 @@ onMounted(loadTasks)
   display: grid;
   grid-template-columns: 1fr 1.5fr 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 .board-page__add-form {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-bottom: 14px;
 }
 
 .board-page__add-input {
-  flex: 1;
+  width: 100%;
+  resize: vertical;
 }
 </style>
