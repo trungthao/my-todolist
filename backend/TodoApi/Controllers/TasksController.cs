@@ -154,7 +154,7 @@ public class TasksController : ControllerBase
     }
 
     private int GetUserId() =>
-        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        int.Parse(User.FindFirstValue("uid")!);
 
     private async Task<bool> IsMember(int? teamId, int userId)
     {

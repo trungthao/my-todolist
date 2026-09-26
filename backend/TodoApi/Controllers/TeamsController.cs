@@ -155,7 +155,7 @@ public class TeamsController : ControllerBase
     }
 
     private int GetUserId() =>
-        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        int.Parse(User.FindFirstValue("uid")!);
 
     private async Task<bool> IsMember(int teamId, int userId) =>
         await _db.TeamMembers.AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId);

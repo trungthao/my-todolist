@@ -55,11 +55,11 @@ async function handleRegister() {
         </div>
         <div class="auth-card__field">
           <label>Mật khẩu</label>
-          <Password v-model="password" placeholder="Tối thiểu 6 ký tự" :feedback="false" toggleMask class="w-full" inputClass="w-full" autocomplete="new-password" />
+          <Password v-model="password" placeholder="Tối thiểu 6 ký tự" :feedback="false" toggleMask class="w-full" inputClass="w-full" :inputProps="{ autocomplete: 'new-password' }" />
         </div>
         <div class="auth-card__field">
           <label>Xác nhận mật khẩu</label>
-          <Password v-model="confirmPassword" placeholder="Nhập lại mật khẩu" :feedback="false" toggleMask class="w-full" inputClass="w-full" autocomplete="new-password" />
+          <Password v-model="confirmPassword" placeholder="Nhập lại mật khẩu" :feedback="false" toggleMask class="w-full" inputClass="w-full" :inputProps="{ autocomplete: 'confirm-password' }" />
         </div>
         <p v-if="errorMessage" class="auth-card__error">{{ errorMessage }}</p>
         <Button label="Đăng ký" type="submit" :loading="loading" class="w-full" />
