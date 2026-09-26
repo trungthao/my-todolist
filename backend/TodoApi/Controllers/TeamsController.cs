@@ -35,7 +35,8 @@ public class TeamsController : ControllerBase
             tm.Team.Name,
             tm.Role,
             tm.Team.Members.Count,
-            DateTime.SpecifyKind(tm.Team.CreatedAtUtc, DateTimeKind.Utc))));
+            DateTime.SpecifyKind(tm.Team.CreatedAtUtc, DateTimeKind.Utc),
+            tm.Team.CreatedByUserId)));
     }
 
     [HttpPost]
@@ -66,7 +67,7 @@ public class TeamsController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(new TeamResponse(team.Id, team.Name, TeamRole.Admin, 1,
-            DateTime.SpecifyKind(team.CreatedAtUtc, DateTimeKind.Utc)));
+            DateTime.SpecifyKind(team.CreatedAtUtc, DateTimeKind.Utc), team.CreatedByUserId));
     }
 
     [HttpGet("{teamId:int}/members")]
@@ -92,7 +93,7 @@ public class TeamsController : ControllerBase
     public async Task<ActionResult<MemberResponse>> AddMember(int teamId, AddMemberRequest request)
     {
         var userId = GetUserId();
-        if (!await IsAdmin(teamId, userId)) return Forbid();
+        if (!await IsOwner(teamId, userId)) return Forbid();
 
         var target = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
         if (target is null)
@@ -120,7 +121,7 @@ public class TeamsController : ControllerBase
     public async Task<IActionResult> RemoveMember(int teamId, int targetUserId)
     {
         var userId = GetUserId();
-        if (!await IsAdmin(teamId, userId)) return Forbid();
+        if (!await IsOwner(teamId, userId)) return Forbid();
 
         if (targetUserId == userId)
             return BadRequest(new { message = "Không thể tự xóa mình khỏi team." });
@@ -139,7 +140,7 @@ public class TeamsController : ControllerBase
     public async Task<IActionResult> ChangeMemberRole(int teamId, int targetUserId, ChangeMemberRoleRequest request)
     {
         var userId = GetUserId();
-        if (!await IsAdmin(teamId, userId)) return Forbid();
+        if (!await IsOwner(teamId, userId)) return Forbid();
 
         if (targetUserId == userId)
             return BadRequest(new { message = "Không thể thay đổi role của chính mình." });
@@ -160,6 +161,6 @@ public class TeamsController : ControllerBase
     private async Task<bool> IsMember(int teamId, int userId) =>
         await _db.TeamMembers.AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId);
 
-    private async Task<bool> IsAdmin(int teamId, int userId) =>
-        await _db.TeamMembers.AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Role == TeamRole.Admin);
+    private async Task<bool> IsOwner(int teamId, int userId) =>
+        await _db.Teams.AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId);
 }

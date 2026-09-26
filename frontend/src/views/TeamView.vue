@@ -45,6 +45,7 @@ function selectTeam(team) {
   localStorage.setItem('currentTeamId', team.id)
   localStorage.setItem('currentTeamName', team.name)
   localStorage.setItem('currentTeamRole', team.myRole)
+  localStorage.setItem('currentTeamCreatedByUserId', team.createdByUserId ?? '')
   router.push(`/board/${team.id}`)
 }
 

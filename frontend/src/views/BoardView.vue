@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
+import InputText from 'primevue/inputtext'
 import { createTask, deleteTask, fetchTasks, updateTaskStatus } from '../api/tasks'
-import { fetchMembers } from '../api/teams'
+import { addMember, fetchMembers, removeMember } from '../api/teams'
 import BoardColumn from '../components/BoardColumn.vue'
 
 const route = useRoute()
@@ -14,6 +15,8 @@ const router = useRouter()
 const teamId = Number(route.params.teamId)
 const teamName = ref(localStorage.getItem('currentTeamName') || 'Team')
 const isAdmin = ref(localStorage.getItem('currentTeamRole') === 'Admin')
+const userId = Number(localStorage.getItem('userId'))
+const isOwner = ref(Number(localStorage.getItem('currentTeamCreatedByUserId')) === userId)
 
 const todoTasks = ref([])
 const inProgressTasks = ref([])
@@ -22,9 +25,13 @@ const newTitle = ref('')
 const loading = ref(true)
 const errorMessage = ref('')
 const username = ref(localStorage.getItem('username') || '')
-const userId = Number(localStorage.getItem('userId'))
 const members = ref([])
 const selectedAssigneeId = ref(userId)
+
+const showMembers = ref(false)
+const newMemberUsername = ref('')
+const addingMember = ref(false)
+const memberError = ref('')
 
 const columnsByStatus = {
   Todo: todoTasks,
@@ -44,7 +51,7 @@ async function loadTasks() {
   try {
     const tasks = await fetchTasks(teamId)
     bucketize(tasks)
-  } catch (err) {
+  } catch {
     errorMessage.value = 'Không tải được danh sách công việc.'
   } finally {
     loading.value = false
@@ -60,12 +67,11 @@ async function loadMembers() {
 async function handleAddTask() {
   const title = newTitle.value.trim()
   if (!title) return
-
   try {
     const created = await createTask(title, null, teamId, selectedAssigneeId.value)
     todoTasks.value.push(created)
     newTitle.value = ''
-  } catch (err) {
+  } catch {
     errorMessage.value = 'Không tạo được công việc mới.'
   }
 }
@@ -74,11 +80,10 @@ async function handleTaskMoved({ id, status }) {
   const list = columnsByStatus[status].value
   const task = list.find((t) => t.id === id)
   if (!task) return
-
   try {
     const updated = await updateTaskStatus(id, status)
     Object.assign(task, updated)
-  } catch (err) {
+  } catch {
     errorMessage.value = 'Không cập nhật được trạng thái công việc.'
     await loadTasks()
   }
@@ -91,8 +96,34 @@ async function handleDeleteTask(id) {
       const index = list.value.findIndex((t) => t.id === id)
       if (index !== -1) list.value.splice(index, 1)
     })
-  } catch (err) {
+  } catch {
     errorMessage.value = 'Không xóa được công việc.'
+  }
+}
+
+async function handleAddMember() {
+  const uname = newMemberUsername.value.trim()
+  if (!uname) return
+  memberError.value = ''
+  addingMember.value = true
+  try {
+    const m = await addMember(teamId, uname)
+    members.value.push(m)
+    newMemberUsername.value = ''
+  } catch (err) {
+    memberError.value = err.response?.data?.message || 'Không thêm được thành viên.'
+  } finally {
+    addingMember.value = false
+  }
+}
+
+async function handleRemoveMember(targetUserId) {
+  memberError.value = ''
+  try {
+    await removeMember(teamId, targetUserId)
+    members.value = members.value.filter((m) => m.userId !== targetUserId)
+  } catch (err) {
+    memberError.value = err.response?.data?.message || 'Không xóa được thành viên.'
   }
 }
 
@@ -118,10 +149,40 @@ onMounted(async () => {
         <h1>{{ teamName }}</h1>
       </div>
       <div class="board-page__user">
+        <button class="members-btn" @click="showMembers = !showMembers">
+          <span class="members-btn__icon">👥</span>
+          {{ members.length }} thành viên
+        </button>
         <span>{{ username }}</span>
         <Button label="Đăng xuất" text size="small" @click="logout" />
       </div>
     </header>
+
+    <div v-if="showMembers" class="members-panel">
+      <div class="members-panel__list">
+        <div v-for="m in members" :key="m.userId" class="members-panel__row">
+          <span class="members-panel__name">{{ m.username }}</span>
+          <span class="members-panel__role" :class="m.role === 'Admin' ? 'members-panel__role--admin' : ''">
+            {{ m.role === 'Admin' ? 'Quản lý' : 'Thành viên' }}
+          </span>
+          <button
+            v-if="isOwner && m.userId !== userId"
+            class="members-panel__remove"
+            title="Xóa khỏi team"
+            @click="handleRemoveMember(m.userId)"
+          >×</button>
+        </div>
+      </div>
+      <form v-if="isOwner" class="members-panel__add" @submit.prevent="handleAddMember">
+        <InputText
+          v-model="newMemberUsername"
+          placeholder="Tên đăng nhập..."
+          size="small"
+        />
+        <Button label="Mời" size="small" type="submit" :loading="addingMember" />
+      </form>
+      <p v-if="memberError" class="members-panel__error">{{ memberError }}</p>
+    </div>
 
     <p v-if="errorMessage" class="board-page__error">{{ errorMessage }}</p>
 
@@ -194,17 +255,20 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
 }
+
 .board-page__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
+
 .board-page__title-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .board-page__back {
   background: none;
   border: none;
@@ -213,33 +277,130 @@ onMounted(async () => {
   cursor: pointer;
   padding: 4px 0;
 }
-.board-page__back:hover {
-  color: #111827;
-}
+
+.board-page__back:hover { color: #111827; }
+
 .board-page__header h1 {
   font-size: 1.5rem;
   color: #111827;
   margin: 0;
 }
+
 .board-page__user {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: #6b7280;
   font-size: 0.9rem;
 }
+
+.members-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.members-btn:hover { background: #e5e7eb; }
+.members-btn__icon { font-size: 1rem; }
+
+/* Members panel */
+.members-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.members-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.members-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.members-panel__name {
+  font-size: 0.9rem;
+  color: #111827;
+  min-width: 120px;
+}
+
+.members-panel__role {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.members-panel__role--admin {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.members-panel__remove {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.members-panel__remove:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.members-panel__add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.members-panel__add :deep(input) { flex: 1; }
+
+.members-panel__error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .board-page__error {
   background: #fef2f2;
   color: #b91c1c;
   padding: 10px 14px;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
+
 .board-page__loading {
   color: #6b7280;
   padding: 40px 0;
   text-align: center;
 }
+
 .board-page__columns {
   display: grid;
   grid-template-columns: 1fr 1.5fr 1fr;
@@ -248,16 +409,19 @@ onMounted(async () => {
   flex: 1;
   min-height: 0;
 }
+
 .board-page__add-form {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 14px;
 }
+
 .board-page__add-input {
   width: 100%;
   resize: vertical;
 }
+
 .board-page__assignee-select {
   width: 100%;
 }
