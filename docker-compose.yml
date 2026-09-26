@@ -20,7 +20,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__Default: "Server=mysql;Port=3306;Database=todolist;User=root;Password=${MYSQL_ROOT_PASSWORD};"
+      ConnectionStrings__Default: "Server=mysql;Port=3306;Database=todolist;User=${DB_USER};Password=${DB_PASSWORD};"
       Jwt__Key: "${JWT_KEY}"
       Auth__DefaultUsername: "${ADMIN_USERNAME:-admin}"
       Auth__DefaultPassword: "${ADMIN_PASSWORD}"
