@@ -8,16 +8,20 @@ import { register } from '../api/auth'
 
 const router = useRouter()
 const username = ref('')
+const fullName = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
 
 async function handleRegister() {
   errorMessage.value = ''
   if (username.value.trim().length < 3) {
     errorMessage.value = 'Tên đăng nhập phải có ít nhất 3 ký tự.'
+    return
+  }
+  if (!fullName.value.trim()) {
+    errorMessage.value = 'Họ và tên không được để trống.'
     return
   }
   if (password.value.length < 6) {
@@ -30,9 +34,10 @@ async function handleRegister() {
   }
   loading.value = true
   try {
-    const data = await register(username.value.trim(), password.value)
+    const data = await register(username.value.trim(), fullName.value.trim(), password.value)
     localStorage.setItem('token', data.token)
     localStorage.setItem('username', data.username)
+    localStorage.setItem('fullName', data.fullName)
     localStorage.setItem('userId', data.userId)
     router.push('/teams')
   } catch (err) {
@@ -52,6 +57,10 @@ async function handleRegister() {
         <div class="auth-card__field">
           <label>Tên đăng nhập</label>
           <InputText v-model="username" placeholder="Tối thiểu 3 ký tự" class="w-full" autocomplete="username" />
+        </div>
+        <div class="auth-card__field">
+          <label>Họ và tên</label>
+          <InputText v-model="fullName" placeholder="Nguyễn Văn A" class="w-full" autocomplete="name" />
         </div>
         <div class="auth-card__field">
           <label>Mật khẩu</label>

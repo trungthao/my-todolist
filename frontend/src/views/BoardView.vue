@@ -25,7 +25,7 @@ const doneTasks = ref([])
 const newTitle = ref('')
 const loading = ref(true)
 const errorMessage = ref('')
-const username = ref(localStorage.getItem('username') || '')
+const username = ref(localStorage.getItem('fullName') || localStorage.getItem('username') || '')
 const members = ref([])
 const selectedAssigneeId = ref(userId)
 
@@ -204,7 +204,7 @@ onMounted(async () => {
     <div v-if="showMembers" class="members-panel">
       <div class="members-panel__list">
         <div v-for="m in members" :key="m.userId" class="members-panel__row">
-          <span class="members-panel__name">{{ m.username }}</span>
+          <span class="members-panel__name">{{ m.fullName || m.username }}</span>
           <span class="members-panel__role" :class="m.role === 'Admin' ? 'members-panel__role--admin' : ''">
             {{ m.role === 'Admin' ? 'Quản lý' : 'Thành viên' }}
           </span>
@@ -257,7 +257,7 @@ onMounted(async () => {
             <Select
               v-model="selectedAssigneeId"
               :options="members"
-              optionLabel="username"
+              :optionLabel="(m) => m.fullName || m.username"
               optionValue="userId"
               placeholder="Giao cho..."
               class="board-page__assignee-select"

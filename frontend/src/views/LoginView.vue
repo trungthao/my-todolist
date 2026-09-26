@@ -20,6 +20,7 @@ async function handleSubmit() {
     const result = await login(username.value, password.value)
     localStorage.setItem('token', result.token)
     localStorage.setItem('username', result.username)
+    localStorage.setItem('fullName', result.fullName || result.username)
     localStorage.setItem('userId', result.userId)
     router.push('/teams')
   } catch (err) {

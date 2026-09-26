@@ -18,9 +18,9 @@ public record TodoItemResponse(
     DateTime? CompletedAtUtc,
     int? TeamId,
     int? CreatedByUserId,
-    string? CreatedByUsername,
+    string? CreatedByFullName,
     int? AssignedToUserId,
-    string? AssignedToUsername)
+    string? AssignedToFullName)
 {
     public static TodoItemResponse FromEntity(TodoItem item) => new(
         item.Id,
@@ -33,9 +33,12 @@ public record TodoItemResponse(
         AsUtc(item.CompletedAtUtc),
         item.TeamId,
         item.CreatedByUserId,
-        item.CreatedBy?.Username,
+        DisplayName(item.CreatedBy),
         item.AssignedToUserId,
-        item.AssignedTo?.Username);
+        DisplayName(item.AssignedTo));
+
+    private static string? DisplayName(TodoApi.Models.User? user) =>
+        user is null ? null : (string.IsNullOrWhiteSpace(user.FullName) ? user.Username : user.FullName);
 
     private static DateTime? AsUtc(DateTime? value) =>
         value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;

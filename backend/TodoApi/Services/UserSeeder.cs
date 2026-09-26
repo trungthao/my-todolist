@@ -19,6 +19,7 @@ public static class UserSeeder
         db.Users.Add(new User
         {
             Username = username,
+            FullName = username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
         });
 

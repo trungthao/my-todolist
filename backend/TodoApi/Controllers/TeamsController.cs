@@ -85,6 +85,7 @@ public class TeamsController : ControllerBase
         return Ok(members.Select(tm => new MemberResponse(
             tm.UserId,
             tm.User.Username,
+            tm.User.FullName,
             tm.Role,
             DateTime.SpecifyKind(tm.JoinedAtUtc, DateTimeKind.Utc))));
     }
@@ -113,7 +114,7 @@ public class TeamsController : ControllerBase
         _db.TeamMembers.Add(member);
         await _db.SaveChangesAsync();
 
-        return Ok(new MemberResponse(target.Id, target.Username, TeamRole.Member,
+        return Ok(new MemberResponse(target.Id, target.Username, target.FullName, TeamRole.Member,
             DateTime.SpecifyKind(member.JoinedAtUtc, DateTimeKind.Utc)));
     }
 

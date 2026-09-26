@@ -50,15 +50,15 @@ function onAssigneeChange(e) {
         @change="onAssigneeChange"
         @blur="editingAssignee = false"
       >
-        <option v-for="m in members" :key="m.userId" :value="m.userId">{{ m.username }}</option>
+        <option v-for="m in members" :key="m.userId" :value="m.userId">{{ m.fullName || m.username }}</option>
       </select>
       <span
-        v-else-if="task.assignedToUsername || canChangeAssignee"
+        v-else-if="task.assignedToFullName || canChangeAssignee"
         class="task-card__assignee"
         :class="{ 'task-card__assignee--editable': canChangeAssignee }"
         :title="canChangeAssignee ? 'Nhấn để thay đổi người thực hiện' : undefined"
         @click="canChangeAssignee && (editingAssignee = true)"
-      >{{ task.assignedToUsername || '— chưa giao' }}</span>
+      >{{ task.assignedToFullName || '— chưa giao' }}</span>
     </div>
 
     <div v-if="showTime" class="task-card__footer">
