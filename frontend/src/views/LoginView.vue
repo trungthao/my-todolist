@@ -20,7 +20,8 @@ async function handleSubmit() {
     const result = await login(username.value, password.value)
     localStorage.setItem('token', result.token)
     localStorage.setItem('username', result.username)
-    router.push('/')
+    localStorage.setItem('userId', result.userId)
+    router.push('/teams')
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Đăng nhập thất bại.'
   } finally {
@@ -49,6 +50,7 @@ async function handleSubmit() {
 
       <Button label="Đăng nhập" type="submit" class="login-card__submit" :loading="submitting" />
     </form>
+    <p class="login-page__register">Chưa có tài khoản? <router-link to="/register">Đăng ký</router-link></p>
   </div>
 </template>
 
@@ -56,6 +58,7 @@ async function handleSubmit() {
 .login-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #f3f4f6;
@@ -104,5 +107,17 @@ async function handleSubmit() {
 
 .login-card__submit {
   margin-top: 6px;
+}
+
+.login-page__register {
+  margin-top: 16px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.login-page__register a {
+  color: #4f46e5;
+  text-decoration: none;
+  font-weight: 500;
 }
 </style>

@@ -1,21 +1,10 @@
 import http from './http'
 
-export function fetchTasks() {
-  return http.get('/tasks').then((res) => res.data)
-}
-
-export function createTask(title, description) {
-  return http.post('/tasks', { title, description }).then((res) => res.data)
-}
-
-export function updateTask(id, title, description) {
-  return http.put(`/tasks/${id}`, { title, description }).then((res) => res.data)
-}
-
-export function updateTaskStatus(id, status) {
-  return http.put(`/tasks/${id}/status`, { status }).then((res) => res.data)
-}
-
-export function deleteTask(id) {
-  return http.delete(`/tasks/${id}`)
-}
+export const fetchTasks = (teamId) => http.get('/tasks', { params: { teamId } }).then(r => r.data)
+export const createTask = (title, description, teamId, assignedToUserId) =>
+  http.post('/tasks', { title, description, teamId, assignedToUserId }).then(r => r.data)
+export const updateTask = (id, title, description, assignedToUserId) =>
+  http.put(`/tasks/${id}`, { title, description, assignedToUserId }).then(r => r.data)
+export const updateTaskStatus = (id, status) =>
+  http.put(`/tasks/${id}/status`, { status }).then(r => r.data)
+export const deleteTask = (id) => http.delete(`/tasks/${id}`)

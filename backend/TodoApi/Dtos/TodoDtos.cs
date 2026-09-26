@@ -2,10 +2,8 @@ using TodoApi.Models;
 
 namespace TodoApi.Dtos;
 
-public record CreateTodoRequest(string Title, string? Description);
-
-public record UpdateTodoRequest(string Title, string? Description);
-
+public record CreateTodoRequest(string Title, string? Description, int TeamId, int? AssignedToUserId);
+public record UpdateTodoRequest(string Title, string? Description, int? AssignedToUserId);
 public record UpdateStatusRequest(TodoStatus Status);
 
 public record TodoItemResponse(
@@ -16,7 +14,12 @@ public record TodoItemResponse(
     long AccumulatedSeconds,
     DateTime? CurrentStartedAtUtc,
     DateTime CreatedAtUtc,
-    DateTime? CompletedAtUtc)
+    DateTime? CompletedAtUtc,
+    int? TeamId,
+    int? CreatedByUserId,
+    string? CreatedByUsername,
+    int? AssignedToUserId,
+    string? AssignedToUsername)
 {
     public static TodoItemResponse FromEntity(TodoItem item) => new(
         item.Id,
@@ -26,10 +29,13 @@ public record TodoItemResponse(
         item.AccumulatedSeconds,
         AsUtc(item.CurrentStartedAtUtc),
         AsUtc(item.CreatedAtUtc)!.Value,
-        AsUtc(item.CompletedAtUtc));
+        AsUtc(item.CompletedAtUtc),
+        item.TeamId,
+        item.CreatedByUserId,
+        item.CreatedBy?.Username,
+        item.AssignedToUserId,
+        item.AssignedTo?.Username);
 
-    // MySQL DATETIME columns don't carry timezone info, so the driver hands back
-    // Kind=Unspecified. Force Utc so JSON serialization always includes the 'Z'.
     private static DateTime? AsUtc(DateTime? value) =>
         value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
 }

@@ -6,7 +6,8 @@ const props = defineProps({
   title: { type: String, required: true },
   status: { type: String, required: true },
   tasks: { type: Array, required: true },
-  variant: { type: String, default: 'compact' }
+  variant: { type: String, default: 'compact' },
+  isAdmin: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['task-moved', 'delete-task'])
@@ -35,7 +36,7 @@ function onChange(event) {
       @change="onChange"
     >
       <template #item="{ element }">
-        <TaskCard :task="element" :variant="variant" @delete="$emit('delete-task', $event)" />
+        <TaskCard :task="element" :variant="variant" :show-time="isAdmin" @delete="$emit('delete-task', $event)" />
       </template>
     </draggable>
 

@@ -4,7 +4,8 @@ import { useElapsedTime } from '../composables/useElapsedTime'
 
 const props = defineProps({
   task: { type: Object, required: true },
-  variant: { type: String, default: 'compact' } // 'compact' | 'featured'
+  variant: { type: String, default: 'compact' }, // 'compact' | 'featured'
+  showTime: { type: Boolean, default: false }
 })
 
 defineEmits(['delete'])
@@ -22,7 +23,8 @@ const isFeatured = computed(() => props.variant === 'featured')
       <button class="task-card__delete" title="Xóa" @click="$emit('delete', task.id)">×</button>
     </div>
     <p v-if="task.description" class="task-card__description">{{ task.description }}</p>
-    <div class="task-card__footer">
+    <div v-if="task.assignedToUsername" class="task-card__assignee">{{ task.assignedToUsername }}</div>
+    <div v-if="showTime" class="task-card__footer">
       <span class="task-card__timer" :class="{ live: isFeatured }">
         <span v-if="isFeatured" class="task-card__dot"></span>
         {{ formatted }}
@@ -81,6 +83,16 @@ const isFeatured = computed(() => props.variant === 'featured')
 .task-card__delete:hover {
   color: #ef4444;
   background: #fef2f2;
+}
+
+.task-card__assignee {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.task-card__assignee::before {
+  content: '\1F464\00A0';
 }
 
 .task-card__footer {
