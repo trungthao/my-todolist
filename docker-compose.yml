@@ -7,14 +7,14 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__Default: "Server=mysql;Port=3306;Database=todolist;User=${DB_USER};Password=${DB_PASSWORD};"
+      ConnectionStrings__Default: "Server=speechy-db;Port=3306;Database=todolist;User=${DB_USER};Password=${DB_PASSWORD};"
       Jwt__Key: "${JWT_KEY}"
       Auth__DefaultUsername: "${ADMIN_USERNAME:-admin}"
       Auth__DefaultPassword: "${ADMIN_PASSWORD}"
       Frontend__Origin: "https://todo.spee-ai.com"
-    depends_on:
-      mysql:
-        condition: service_healthy
+    networks:
+      - default
+      - speechy_default
 
   frontend:
     build: ./frontend
@@ -22,20 +22,6 @@ services:
     ports:
       - "127.0.0.1:4173:80"
 
-  mysql:
-    image: mysql:8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: todolist
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-volumes:
-  mysql_data:
+networks:
+  speechy_default:
+    external: true
