@@ -9,6 +9,11 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5108',
         changeOrigin: true
+      },
+      '/taskHub': {
+        target: 'http://localhost:5108',
+        changeOrigin: true,
+        ws: true
       }
     }
   }

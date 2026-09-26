@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Data;
 using TodoApi.Dtos;
+using TodoApi.Hubs;
 using TodoApi.Models;
 
 namespace TodoApi.Controllers;
@@ -14,10 +16,12 @@ namespace TodoApi.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IHubContext<TaskHub> _hub;
 
-    public TasksController(AppDbContext db)
+    public TasksController(AppDbContext db, IHubContext<TaskHub> hub)
     {
         _db = db;
+        _hub = hub;
     }
 
     [HttpGet]
@@ -65,7 +69,9 @@ public class TasksController : ControllerBase
         await _db.Entry(item).Reference(t => t.CreatedBy).LoadAsync();
         await _db.Entry(item).Reference(t => t.AssignedTo).LoadAsync();
 
-        return CreatedAtAction(nameof(GetAll), new { id = item.Id }, TodoItemResponse.FromEntity(item));
+        var created = TodoItemResponse.FromEntity(item);
+        await _hub.Clients.Group(TaskHub.GroupName(item.TeamId!.Value)).SendAsync("TaskCreated", created);
+        return CreatedAtAction(nameof(GetAll), new { id = item.Id }, created);
     }
 
     [HttpPut("{id:int}")]
@@ -96,7 +102,9 @@ public class TasksController : ControllerBase
         await _db.SaveChangesAsync();
         await _db.Entry(item).Reference(t => t.AssignedTo).LoadAsync();
 
-        return Ok(TodoItemResponse.FromEntity(item));
+        var updated = TodoItemResponse.FromEntity(item);
+        await _hub.Clients.Group(TaskHub.GroupName(item.TeamId!.Value)).SendAsync("TaskUpdated", updated);
+        return Ok(updated);
     }
 
     [HttpPut("{id:int}/status")]
@@ -117,7 +125,9 @@ public class TasksController : ControllerBase
         ApplyStatusTransition(item, request.Status);
         await _db.SaveChangesAsync();
 
-        return Ok(TodoItemResponse.FromEntity(item));
+        var updated = TodoItemResponse.FromEntity(item);
+        await _hub.Clients.Group(TaskHub.GroupName(item.TeamId!.Value)).SendAsync("TaskUpdated", updated);
+        return Ok(updated);
     }
 
     [HttpPut("{id:int}/assignee")]
@@ -148,7 +158,9 @@ public class TasksController : ControllerBase
         await _db.SaveChangesAsync();
         await _db.Entry(item).Reference(t => t.AssignedTo).LoadAsync();
 
-        return Ok(TodoItemResponse.FromEntity(item));
+        var updated = TodoItemResponse.FromEntity(item);
+        await _hub.Clients.Group(TaskHub.GroupName(item.TeamId!.Value)).SendAsync("TaskUpdated", updated);
+        return Ok(updated);
     }
 
     [HttpDelete("{id:int}")]
@@ -162,9 +174,11 @@ public class TasksController : ControllerBase
         if (membership is null) return Forbid();
         if (membership.Role != TeamRole.Admin && item.CreatedByUserId != userId) return Forbid();
 
+        var teamId = item.TeamId!.Value;
         _db.TodoItems.Remove(item);
         await _db.SaveChangesAsync();
 
+        await _hub.Clients.Group(TaskHub.GroupName(teamId)).SendAsync("TaskDeleted", new { id });
         return NoContent();
     }
 

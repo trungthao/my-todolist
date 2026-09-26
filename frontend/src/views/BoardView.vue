@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useTaskHub } from '../composables/useTaskHub'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -148,8 +149,38 @@ function logout() {
   router.push('/login')
 }
 
+const { start: startHub, stop: stopHub } = useTaskHub({
+  onTaskCreated(task) {
+    const alreadyExists = [...todoTasks.value, ...inProgressTasks.value, ...doneTasks.value]
+      .some((t) => t.id === task.id)
+    if (alreadyExists) return
+    columnsByStatus[task.status]?.value.push(task)
+  },
+  onTaskUpdated(task) {
+    for (const list of [todoTasks, inProgressTasks, doneTasks]) {
+      const idx = list.value.findIndex((t) => t.id === task.id)
+      if (idx !== -1) {
+        if (list.value[idx].status === task.status) {
+          list.value.splice(idx, 1, task)
+        } else {
+          list.value.splice(idx, 1)
+          columnsByStatus[task.status]?.value.push(task)
+        }
+        return
+      }
+    }
+  },
+  onTaskDeleted({ id }) {
+    for (const list of [todoTasks, inProgressTasks, doneTasks]) {
+      const idx = list.value.findIndex((t) => t.id === id)
+      if (idx !== -1) { list.value.splice(idx, 1); return }
+    }
+  }
+})
+
 onMounted(async () => {
   await Promise.all([loadTasks(), loadMembers()])
+  await startHub(teamId)
 })
 </script>
 
