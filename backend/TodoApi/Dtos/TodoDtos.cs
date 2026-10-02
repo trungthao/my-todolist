@@ -43,3 +43,5 @@ public record TodoItemResponse(
     private static DateTime? AsUtc(DateTime? value) =>
         value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
 }
+
+public record EmisLoginSetupRequest(string Username, string TwoFactorCode);
