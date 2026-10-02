@@ -1,6 +1,7 @@
 <script setup>
-import { computed, ref, toRef } from 'vue'
+import { computed, nextTick, ref, toRef } from 'vue'
 import { useElapsedTime } from '../composables/useElapsedTime'
+import LinkifiedText from './LinkifiedText.vue'
 
 const props = defineProps({
   task: { type: Object, required: true },
@@ -10,7 +11,7 @@ const props = defineProps({
   members: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['delete', 'update-assignee'])
+const emit = defineEmits(['delete', 'update-assignee', 'update-task'])
 
 const taskRef = toRef(props, 'task')
 const { formatted } = useElapsedTime(taskRef)
@@ -23,6 +24,7 @@ const showTime = computed(() => props.isAdmin || isMyTask.value)
 const canDelete = computed(() => props.isAdmin || props.task.createdByUserId === props.userId)
 const canDrag = computed(() => props.isAdmin || isMyTask.value)
 const canChangeAssignee = computed(() => props.isAdmin || props.task.createdByUserId === props.userId)
+const canEdit = computed(() => props.isAdmin || props.task.createdByUserId === props.userId)
 
 const editingAssignee = ref(false)
 
@@ -31,16 +33,76 @@ function onAssigneeChange(e) {
   emit('update-assignee', { taskId: props.task.id, assignedToUserId: newId })
   editingAssignee.value = false
 }
+
+const editing = ref(false)
+const draftTitle = ref('')
+const draftDescription = ref('')
+const titleInput = ref()
+
+async function startEdit() {
+  draftTitle.value = props.task.title
+  draftDescription.value = props.task.description || ''
+  editing.value = true
+  await nextTick()
+  titleInput.value?.focus()
+}
+
+function cancelEdit() {
+  editing.value = false
+}
+
+function saveEdit() {
+  const title = draftTitle.value.trim()
+  if (!title) return
+  const description = draftDescription.value.trim() || null
+  if (title !== props.task.title || description !== (props.task.description || null)) {
+    emit('update-task', { taskId: props.task.id, title, description })
+  }
+  editing.value = false
+}
+
+function onEditKeydown(e) {
+  if (e.key === 'Escape') cancelEdit()
+  else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveEdit()
+}
 </script>
 
 <template>
-  <div class="task-card" :class="[variant, { 'no-drag': !canDrag }]">
-    <div class="task-card__header">
-      <h3 class="task-card__title">{{ task.title }}</h3>
-      <button v-if="canDelete" class="task-card__delete" title="Xóa" @click="$emit('delete', task.id)">×</button>
-    </div>
+  <div class="task-card" :class="[variant, { 'no-drag': !canDrag, 'task-card--editing': editing }]">
+    <form v-if="editing" class="task-card__edit" @submit.prevent="saveEdit" @keydown="onEditKeydown">
+      <textarea
+        ref="titleInput"
+        v-model="draftTitle"
+        class="task-card__edit-input"
+        rows="3"
+        placeholder="Nội dung công việc"
+      ></textarea>
+      <textarea
+        v-model="draftDescription"
+        class="task-card__edit-input task-card__edit-input--secondary"
+        rows="2"
+        placeholder="Mô tả (không bắt buộc)"
+      ></textarea>
+      <div class="task-card__edit-actions">
+        <span class="task-card__edit-hint">Ctrl+Enter để lưu, Esc để hủy</span>
+        <button type="button" class="task-card__btn" @click="cancelEdit">Hủy</button>
+        <button type="submit" class="task-card__btn task-card__btn--primary" :disabled="!draftTitle.trim()">Lưu</button>
+      </div>
+    </form>
 
-    <p v-if="task.description" class="task-card__description">{{ task.description }}</p>
+    <template v-else>
+      <div class="task-card__header">
+        <LinkifiedText tag="h3" class="task-card__title" :text="task.title" />
+        <div class="task-card__actions">
+          <button v-if="canEdit" class="task-card__icon-btn" title="Sửa" @click="startEdit">
+            <i class="pi pi-pencil"></i>
+          </button>
+          <button v-if="canDelete" class="task-card__icon-btn task-card__delete" title="Xóa" @click="$emit('delete', task.id)">×</button>
+        </div>
+      </div>
+
+      <LinkifiedText v-if="task.description" tag="p" class="task-card__description" :text="task.description" />
+    </template>
 
     <div class="task-card__assignee-row">
       <select
@@ -106,7 +168,14 @@ function onAssigneeChange(e) {
   word-break: break-word;
 }
 
-.task-card__delete {
+.task-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.task-card__icon-btn {
   border: none;
   background: transparent;
   color: #9ca3af;
@@ -115,12 +184,86 @@ function onAssigneeChange(e) {
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 6px;
-  flex-shrink: 0;
+}
+
+.task-card__icon-btn .pi { font-size: 0.8rem; }
+
+.task-card__icon-btn:hover {
+  color: #2563eb;
+  background: #eff6ff;
 }
 
 .task-card__delete:hover {
   color: #ef4444;
   background: #fef2f2;
+}
+
+.task-card--editing { cursor: default; }
+
+.task-card__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-card__edit-input {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.task-card__edit-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.task-card__edit-input--secondary {
+  font-size: 0.82rem;
+  color: #4b5563;
+}
+
+.task-card__edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-card__edit-hint {
+  margin-right: auto;
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.task-card__btn {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.task-card__btn:hover { background: #f3f4f6; }
+
+.task-card__btn--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.task-card__btn--primary:hover { background: #1d4ed8; }
+
+.task-card__btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .task-card__assignee-row {

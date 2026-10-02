@@ -6,7 +6,7 @@ import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
-import { createTask, deleteTask, fetchTasks, updateTaskAssignee, updateTaskStatus } from '../api/tasks'
+import { createTask, deleteTask, fetchTasks, updateTask, updateTaskAssignee, updateTaskStatus } from '../api/tasks'
 import { addMember, fetchMembers, removeMember } from '../api/teams'
 import BoardColumn from '../components/BoardColumn.vue'
 
@@ -99,6 +99,18 @@ async function handleUpdateAssignee({ taskId, assignedToUserId }) {
     Object.assign(task, updated)
   } catch (err) {
     errorMessage.value = err.response?.data?.message || 'Không cập nhật được người thực hiện.'
+  }
+}
+
+async function handleUpdateTask({ taskId, title, description }) {
+  const allTasks = [...todoTasks.value, ...inProgressTasks.value, ...doneTasks.value]
+  const task = allTasks.find((t) => t.id === taskId)
+  if (!task) return
+  try {
+    const updated = await updateTask(taskId, title, description, task.assignedToUserId)
+    Object.assign(task, updated)
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'Không cập nhật được công việc.'
   }
 }
 
@@ -243,6 +255,7 @@ onMounted(async () => {
         @task-moved="handleTaskMoved"
         @delete-task="handleDeleteTask"
         @update-assignee="handleUpdateAssignee"
+        @update-task="handleUpdateTask"
       >
         <template #header-extra>
           <form class="board-page__add-form" @submit.prevent="handleAddTask">
@@ -279,6 +292,7 @@ onMounted(async () => {
         @task-moved="handleTaskMoved"
         @delete-task="handleDeleteTask"
         @update-assignee="handleUpdateAssignee"
+        @update-task="handleUpdateTask"
       />
 
       <BoardColumn
@@ -292,6 +306,7 @@ onMounted(async () => {
         @task-moved="handleTaskMoved"
         @delete-task="handleDeleteTask"
         @update-assignee="handleUpdateAssignee"
+        @update-task="handleUpdateTask"
       />
     </div>
   </div>

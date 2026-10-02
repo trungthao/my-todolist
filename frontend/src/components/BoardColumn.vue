@@ -12,7 +12,7 @@ const props = defineProps({
   members: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['task-moved', 'delete-task', 'update-assignee'])
+const emit = defineEmits(['task-moved', 'delete-task', 'update-assignee', 'update-task'])
 
 function onChange(event) {
   if (event.added) {
@@ -42,6 +42,8 @@ function checkMove(evt) {
       :group="{ name: 'tasks', pull: true, put: true }"
       item-key="id"
       :move="checkMove"
+      filter=".task-card--editing, .linkified__link"
+      :prevent-on-filter="false"
       @change="onChange"
     >
       <template #item="{ element }">
@@ -53,6 +55,7 @@ function checkMove(evt) {
           :members="members"
           @delete="$emit('delete-task', $event)"
           @update-assignee="$emit('update-assignee', $event)"
+          @update-task="$emit('update-task', $event)"
         />
       </template>
     </draggable>
