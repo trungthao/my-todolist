@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TodoApi.Dtos;
@@ -34,9 +33,7 @@ public class EmisController : ControllerBase
         var url = section["Url"];
         var password = section["Password"];
         var supportUsername = section["SupportUsername"];
-        var deviceId = section["DeviceId"];
-        var tenantId = section["TenantId"];
-        if (new[] { url, password, supportUsername, deviceId, tenantId }.Any(string.IsNullOrWhiteSpace))
+        if (new[] { url, password, supportUsername }.Any(string.IsNullOrWhiteSpace))
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Chưa cấu hình EmisLoginSetup trên server." });
 
@@ -50,7 +47,6 @@ public class EmisController : ControllerBase
                 twoFactorCode = request.TwoFactorCode.Trim()
             })
         };
-        message.Headers.Add("Cookie", $"x-misa-deviceid={deviceId}; x-misa-tid={tenantId}");
 
         HttpResponseMessage response;
         try

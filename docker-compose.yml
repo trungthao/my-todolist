@@ -14,8 +14,6 @@ services:
       Frontend__Origin: "https://todo.spee-ai.com"
       EmisLoginSetup__Password: "${EMIS_PASSWORD}"
       EmisLoginSetup__SupportUsername: "${EMIS_SUPPORT_USERNAME}"
-      EmisLoginSetup__DeviceId: "${EMIS_DEVICE_ID}"
-      EmisLoginSetup__TenantId: "${EMIS_TENANT_ID}"
     networks:
       - default
       - speechy_default
