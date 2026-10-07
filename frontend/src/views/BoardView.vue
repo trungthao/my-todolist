@@ -8,6 +8,7 @@ import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 import { createTask, deleteTask, fetchTasks, updateTask, updateTaskAssignee, updateTaskStatus } from '../api/tasks'
 import { addMember, fetchMembers, removeMember } from '../api/teams'
+import { fetchJiraIssue } from '../api/jira'
 import BoardColumn from '../components/BoardColumn.vue'
 
 const route = useRoute()
@@ -28,6 +29,7 @@ const errorMessage = ref('')
 const username = ref(localStorage.getItem('fullName') || localStorage.getItem('username') || '')
 const members = ref([])
 const selectedAssigneeId = ref(userId)
+const addingTask = ref(false)
 
 const showMembers = ref(false)
 const newMemberUsername = ref('')
@@ -65,15 +67,33 @@ async function loadMembers() {
   } catch {}
 }
 
+// Input that is just a Jira key ("EMTT-3832") or browse link creates the task from the ticket.
+const JIRA_INPUT = /^(?:https?:\/\/\S+\/browse\/)?([A-Za-z][A-Za-z0-9_]+-\d+)\/?$/
+
 async function handleAddTask() {
-  const title = newTitle.value.trim()
-  if (!title) return
+  const input = newTitle.value.trim()
+  if (!input || addingTask.value) return
+  addingTask.value = true
+  errorMessage.value = ''
   try {
-    const created = await createTask(title, null, teamId, selectedAssigneeId.value)
-    todoTasks.value.push(created)
+    const jiraKey = input.match(JIRA_INPUT)?.[1]
+    let title = input
+    let description = null
+    if (jiraKey) {
+      try {
+        ;({ title, description } = await fetchJiraIssue(jiraKey))
+      } catch (err) {
+        errorMessage.value = err.response?.data?.message || 'Không lấy được thông tin từ Jira.'
+        return
+      }
+    }
+    const created = await createTask(title, description, teamId, selectedAssigneeId.value)
+    if (!todoTasks.value.some((t) => t.id === created.id)) todoTasks.value.push(created)
     newTitle.value = ''
   } catch {
     errorMessage.value = 'Không tạo được công việc mới.'
+  } finally {
+    addingTask.value = false
   }
 }
 
@@ -261,7 +281,7 @@ onMounted(async () => {
           <form class="board-page__add-form" @submit.prevent="handleAddTask">
             <Textarea
               v-model="newTitle"
-              placeholder="Thêm công việc mới..."
+              placeholder="Thêm công việc mới hoặc dán mã/link Jira..."
               class="board-page__add-input"
               rows="3"
               autoResize
@@ -276,7 +296,7 @@ onMounted(async () => {
               class="board-page__assignee-select"
               size="small"
             />
-            <Button label="Thêm" size="small" type="submit" />
+            <Button label="Thêm" size="small" type="submit" :loading="addingTask" />
           </form>
         </template>
       </BoardColumn>

@@ -45,3 +45,5 @@ public record TodoItemResponse(
 }
 
 public record EmisLoginSetupRequest(string Username, string TwoFactorCode);
+
+public record JiraIssueResponse(string Key, string Title, string Description, string Url);
