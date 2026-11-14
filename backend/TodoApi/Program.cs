@@ -54,13 +54,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
-var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? "http://localhost:5173";
+var frontendOrigins = (builder.Configuration["Frontend:Origins"]
+    ?? builder.Configuration["Frontend:Origin"]
+    ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
-        policy.WithOrigins(frontendOrigin)
+        policy.WithOrigins(frontendOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
