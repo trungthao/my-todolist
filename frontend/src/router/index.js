@@ -3,12 +3,18 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import TeamView from '../views/TeamView.vue'
 import BoardView from '../views/BoardView.vue'
+import LibraryView from '../views/LibraryView.vue'
+import SourceView from '../views/SourceView.vue'
+import ReaderView from '../views/ReaderView.vue'
 
 const routes = [
   { path: '/login', component: LoginView, meta: { public: true } },
   { path: '/register', component: RegisterView, meta: { public: true } },
   { path: '/teams', component: TeamView },
   { path: '/board/:teamId', component: BoardView },
+  { path: '/library', component: LibraryView },
+  { path: '/library/:slug', component: SourceView },
+  { path: '/library/:sourceSlug/:docSlug', component: ReaderView },
   { path: '/', redirect: '/teams' },
 ]
 

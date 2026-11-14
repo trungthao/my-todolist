@@ -92,6 +92,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(FrontendCorsPolicy);
 
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

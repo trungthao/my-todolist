@@ -11,6 +11,11 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<ReadingSource> ReadingSources => Set<ReadingSource>();
+    public DbSet<ReadingDocument> ReadingDocuments => Set<ReadingDocument>();
+    public DbSet<ReadingProgress> ReadingProgresses => Set<ReadingProgress>();
+    public DbSet<Highlight> Highlights => Set<Highlight>();
+    public DbSet<ReadingNote> ReadingNotes => Set<ReadingNote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +47,30 @@ public class AppDbContext : DbContext
             .WithMany(u => u.TeamMemberships)
             .HasForeignKey(tm => tm.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ReadingSource>()
+            .HasIndex(s => s.Slug).IsUnique();
+
+        modelBuilder.Entity<ReadingDocument>()
+            .HasIndex(d => new { d.SourceId, d.Slug }).IsUnique();
+
+        modelBuilder.Entity<ReadingProgress>()
+            .HasKey(p => new { p.UserId, p.DocumentId });
+
+        modelBuilder.Entity<ReadingProgress>()
+            .HasOne(p => p.User).WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ReadingProgress>()
+            .HasOne(p => p.Document).WithMany(d => d.Progresses).HasForeignKey(p => p.DocumentId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Highlight>()
+            .HasOne(h => h.User).WithMany().HasForeignKey(h => h.UserId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Highlight>()
+            .HasOne(h => h.Document).WithMany(d => d.Highlights).HasForeignKey(h => h.DocumentId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ReadingNote>()
+            .HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ReadingNote>()
+            .HasOne(n => n.Document).WithMany(d => d.Notes).HasForeignKey(n => n.DocumentId).OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Team>()
             .HasOne(t => t.CreatedBy)
