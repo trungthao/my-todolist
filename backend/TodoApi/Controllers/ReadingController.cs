@@ -70,8 +70,23 @@ public partial class ReadingController(AppDbContext db, IWebHostEnvironment env)
 
         var html = await System.IO.File.ReadAllTextAsync(filePath);
         var body = ExtractBody(html);
+        body = RewriteAssetPaths(body, doc.Source.Slug);
         return Ok(body);
     }
+
+    // Rewrite relative asset paths to absolute /reading/{slug}/...
+    private static string RewriteAssetPaths(string html, string sourceSlug)
+    {
+        var base_ = $"/reading/{sourceSlug}/";
+        html = RelativeSrcRegex().Replace(html, m => $"src=\"{base_}{m.Groups[1].Value}\"");
+        html = RelativeHrefRegex().Replace(html, m => $"href=\"{base_}{m.Groups[1].Value}\"");
+        return html;
+    }
+
+    [GeneratedRegex(@"src=""(?!https?://|/|data:)([^""]+)""", RegexOptions.IgnoreCase)]
+    private static partial Regex RelativeSrcRegex();
+    [GeneratedRegex(@"href=""(?!https?://|/|#|mailto:)([^""]+)""", RegexOptions.IgnoreCase)]
+    private static partial Regex RelativeHrefRegex();
 
     // Strip outer HTML shell, return only article content
     private static string ExtractBody(string html)
