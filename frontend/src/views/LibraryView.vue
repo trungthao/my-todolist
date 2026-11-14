@@ -18,7 +18,7 @@ onMounted(async () => {
   <div class="library">
     <header class="library__header">
       <div class="library__header-left">
-        <button class="library__back" @click="router.push('/teams')">← Tasks</button>
+        <button class="library__back" @click="router.push('/')">← Home</button>
         <h1>Thư viện</h1>
       </div>
       <span class="library__user">{{ username }}</span>

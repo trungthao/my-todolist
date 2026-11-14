@@ -62,9 +62,7 @@ onMounted(load)
     <header class="teams-page__header">
       <h1>Chọn team</h1>
       <div class="teams-page__user">
-        <Button label="📚 Thư viện" text size="small" @click="router.push('/library')" />
-        <span>{{ username }}</span>
-        <Button label="Đăng xuất" text size="small" @click="logout" />
+        <Button label="← Home" text size="small" @click="router.push('/')" />
       </div>
     </header>
 
